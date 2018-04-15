@@ -42,29 +42,10 @@ class BipartiteGraph():
             # for each successor m' of m on w's preferences,
             # remove w from m's preferences so that no man
             # less desirable than m will propose w
-            for i in range(w.prefs.index(m) + 1, len(w.prefs)):
+            succ_index = w.prefs.index(m) + 1
+            for i in range(succ_index, len(w.prefs)):
                 successor = w.prefs[i]
                 successor.prefs.remove(w)
-
-
-if __name__ == '__main__':
-    u1 = Vertex('u1')
-    u2 = Vertex('u2')
-
-    v1 = Vertex('v1')
-    v2 = Vertex('v2')
-
-    u1.prefs = [v1, v2]
-    u2.prefs = [v1, v2]
-
-    v1.prefs = [u2, u1]
-    v2.prefs = [u2, u1]
-
-    U = set([u1, u2])
-    V = set([v1, v2])
-    G = BipartiteGraph(U, V)
-    G.stable_match()
-
-    print('Resulting stable matching:')
-    for (m, w) in G.matching.items():
-        print(f'({m.label}, {w.label})')
+            # and delete all m' from w so we won't attempt
+            # to remove w from their list more than once
+            del w.prefs[succ_index:]
