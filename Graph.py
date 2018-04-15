@@ -19,6 +19,7 @@ class BipartiteGraph():
     # Irving weakly stable marriage algorithm
     # which is an extension to Gale-Shapley's
     def stable_match(self):
+        husband = {}
         self.matching = {}
         # deep copy so we don't change
         # original vertices data
@@ -27,22 +28,23 @@ class BipartiteGraph():
             m = free_men.pop()
             w = m.prefs[0]
 
-            # if some man p is engaged to w,
+            # if some man h is engaged to w,
             # set him free
-            p = self.matching.get(w)
-            if p is not None:
-                del self.matching[p]
-                free_men.add(p)
+            h = husband.get(w)
+            if h is not None:
+                del self.matching[h]
+                free_men.add(h)
 
             # m engages w
             self.matching[m] = w
-            self.matching[w] = m
+            husband[w] = m
 
             # for each successor m' of m on w's preferences,
             # remove w from m's preferences so that no man
             # less desirable than m will propose w
             for i in range(w.prefs.index(m) + 1, len(w.prefs)):
-                w.prefs[i].prefs.remove(w)
+                successor = w.prefs[i]
+                successor.prefs.remove(w)
 
 
 if __name__ == '__main__':
