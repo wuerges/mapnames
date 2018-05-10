@@ -24,3 +24,9 @@ def wagner_fischer(str1, str2):
     # [-1][-1] is the last column of the last row, which holds the edit
     # distance of the whole str1 and str2 strings
     return D[-1][-1]
+
+
+# Did not put on Vertex class because
+# this is too non-standard for graphs
+def vertex_diff(u, v):
+    return wagner_fischer(u.label, v.label)
