@@ -104,15 +104,15 @@ class StableMatchingTest(ut.TestCase):
 
     # Test code taken from:
     # http://www.rosettacode.org/wiki/Stable_marriage_problem#Python
-    def check_matching(self):
-        inverseengaged = dict((v, k) for k, v in self.G.matching.items())
-        for he, she in self.G.matching.items():
+    def check_matching(self, matching):
+        inverseengaged = dict((v, k) for k, v in matching.items())
+        for he, she in matching.items():
             shelikes = she.prefs
             shelikesbetter = shelikes[:shelikes.index(he)]
             helikes = he.prefs
             helikesbetter = helikes[:helikes.index(she)]
             for guy in shelikesbetter:
-                guysgirl = self.G.matching[guy]
+                guysgirl = matching[guy]
                 guylikes = guy.prefs
                 if guylikes.index(guysgirl) > guylikes.index(she):
                     print(
@@ -130,15 +130,15 @@ class StableMatchingTest(ut.TestCase):
     def test_matching(self):
         capt_stdout = io.StringIO()
         sys.stdout = capt_stdout  # redirect stdout
-        self.G.stable_match()
+        matching = self.G.stable_match()
         sys.stdout = sys.__stdout__  # reset redirect
         print('Captured stdout:', capt_stdout.getvalue())
 
         print('Resulting stable matching:')
-        for (m, w) in self.G.matching.items():
+        for (m, w) in matching.items():
             print(f'({m.label}, {w.label})')
 
-        self.assertEqual(self.check_matching(), True)
+        self.assertEqual(self.check_matching(matching), True)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
 import copy as cp
 import numpy as np
+import operator as op
 
 
 class Vertex():
@@ -9,21 +10,37 @@ class Vertex():
         self.label = label
         self.prefs = None
 
+    def set_prefs(self, others, fn):
+        """ Sets the preference list of this vertex, sorted by the results of fn.
+
+        fn must be a function accepting two vertices and returning an integer
+        that describes how closely related these two vertices are. In this case,
+        the function will be called with this vertex and every other vertex in
+        others. The integers will be used to sort the preference list. They need
+        not be the final vertex position.
+        """
+        ratings = [(other, fn(self, other)) for other in others]
+        ratings = sorted(ratings, key=op.itemgetter(1))
+        self.prefs = [other for (other, _) in ratings]
+
+    def __str__(self):
+        return self.label
+
+    def __repr__(self):
+        return self.__str__()
+
 
 class BipartiteGraph():
     def __init__(self, U, V):
         self.U = U
         self.V = V
-        self.matching = None
 
-    # Irving weakly stable marriage algorithm
-    # which is an extension to Gale-Shapley's
     def stable_match(self):
+        """ Irving weakly-stable marriage algorithm (an extension to Gale-Shapley's). """
         husband = {}
-        self.matching = {}
-        # deep copy so we don't change
-        # original vertices data
-        free_men = set(cp.deepcopy(self.U))
+        matching = {}
+        # preferences list will get screwed...
+        free_men = set(self.U)
         while len(free_men) > 0:
             m = free_men.pop()
             w = m.prefs[0]
@@ -32,11 +49,11 @@ class BipartiteGraph():
             # set him free
             h = husband.get(w)
             if h is not None:
-                del self.matching[h]
+                del matching[h]
                 free_men.add(h)
 
             # m engages w
-            self.matching[m] = w
+            matching[m] = w
             husband[w] = m
 
             # for each successor m' of m on w's preferences,
@@ -49,3 +66,10 @@ class BipartiteGraph():
             # and delete all m' from w so we won't attempt
             # to remove w from their list more than once
             del w.prefs[succ_index:]
+        return matching
+
+    def set_prefs(self, fn):
+        for u in self.U:
+            u.set_prefs(self.V, fn)
+        for v in self.V:
+            v.set_prefs(self.U, fn)
