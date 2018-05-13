@@ -5,8 +5,8 @@ import random
 
 def main():
     if len(sys.argv) < 3:
-        print(
-            f'Missing arguments. Usage:\npython {sys.argv[0]} <json file> <output size>')
+        print(('Missing arguments!\n'
+               f'Usage: python {sys.argv[0]} <json file> <output size>'))
         exit(0)
     with open(sys.argv[1], 'r') as f:
         length = int(sys.argv[2])

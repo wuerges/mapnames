@@ -1,5 +1,3 @@
-import copy as cp
-import numpy as np
 import operator as op
 
 
@@ -14,10 +12,10 @@ class Vertex():
         """ Sets the preference list of this vertex, sorted by the results of fn.
 
         fn must be a function accepting two vertices and returning an integer
-        that describes how closely related these two vertices are. In this case,
-        the function will be called with this vertex and every other vertex in
-        others. The integers will be used to sort the preference list. They need
-        not be the final vertex position.
+        that describes how closely related these two vertices are. In this
+        case, the function will be called with this vertex and every other
+        vertex in others. The integers will be used to sort the preference
+        list. They need not be the final vertex position.
         """
         ratings = [(other, fn(self, other)) for other in others]
         ratings = sorted(ratings, key=op.itemgetter(1))
@@ -36,7 +34,10 @@ class BipartiteGraph():
         self.V = V
 
     def stable_match(self):
-        """ Irving weakly-stable marriage algorithm (an extension to Gale-Shapley's). """
+        """ Irving weakly-stable marriage algorithm.
+
+        (an extension to Gale-Shapley's).
+        """
         husband = {}
         matching = {}
         # preferences list will get screwed...
