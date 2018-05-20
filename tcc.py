@@ -3,7 +3,8 @@ import numpy as np
 
 def wagner_fischer(str1, str2):
     D = np.empty((len(str1) + 1, len(str2) + 1), dtype=np.int64)
-    # Positions of D represent the lengths of str1 and str2, respectively, so:
+    # Positions of D represent the edit distance from s1 to s2 where row
+    # i and column j means the edit distance from s1[0..i] to s2[0..j]. So:
     # D[0][0] = 0 because there is no operation to do on empty strings
     # D[i][0] = D[i - 1][0] + 1 (cost of deletion) for i from
     # 1 to len(str1) 'cause the only thing to do is delete all
@@ -17,7 +18,7 @@ def wagner_fischer(str1, str2):
             # Minimum of deletion and insertion operations
             # Deletion means cost of transforming str1[0..i-1]
             # to str2[0..j] and deleting str1[i]
-            # Insertion means cost of transforming str[0..i]
+            # Insertion means cost of transforming str1[0..i]
             # to str2[0..j-1] and inserting str2[j]
             cost2 = np.minimum(D[i - 1][j] + 1, D[i][j - 1] + 1)
             D[i][j] = np.minimum(cost1, cost2)
