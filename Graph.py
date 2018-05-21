@@ -37,6 +37,7 @@ class BipartiteGraph():
         """ Irving weakly-stable marriage algorithm.
 
         (an extension to Gale-Shapley's).
+        :return: a dict mapping the vertices of U to V.
         """
         husband = {}
         matching = {}
