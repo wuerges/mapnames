@@ -1,12 +1,13 @@
 import operator as op
 
 
-class Vertex():
+class Vertex:
     def __init__(self, label):
         # edges list not necessary
         # because of preferences list
         self.label = label
         self.prefs = None
+        self.ratings = None
 
     def set_prefs(self, others, fn):
         """ Sets the preference list of this vertex, sorted by the results of fn.
@@ -17,9 +18,12 @@ class Vertex():
         vertex in others. The integers will be used to sort the preference
         list. They need not be the final vertex position.
         """
-        ratings = [(other, fn(self, other)) for other in others]
-        ratings = sorted(ratings, key=op.itemgetter(1))
-        self.prefs = [other for (other, _) in ratings]
+        self.ratings = [(other, fn(self, other)) for other in others]
+        self.ratings.sort(key=op.itemgetter(1))
+        self.restore_prefs()
+
+    def restore_prefs(self):
+        self.prefs = [other for (other, _) in self.ratings]
 
     def __str__(self):
         return self.label
@@ -28,7 +32,7 @@ class Vertex():
         return self.__str__()
 
 
-class BipartiteGraph():
+class BipartiteGraph:
     def __init__(self, U, V):
         self.U = U
         self.V = V
@@ -75,3 +79,9 @@ class BipartiteGraph():
             u.set_prefs(self.V, fn)
         for v in self.V:
             v.set_prefs(self.U, fn)
+
+    def restore_prefs(self):
+        for u in self.U:
+            u.restore_prefs()
+        for v in self.V:
+            v.restore_prefs()
