@@ -12,11 +12,11 @@ fi
 #fi
 
 echo "Root folder: ${IN_FOLDER}"
-for folder in $(ls ${IN_FOLDER}); do
-    echo "Running benchmark on ${IN_FOLDER}${folder}"
-    for file in $(ls ${IN_FOLDER}${folder}); do
-        echo -n "${IN_FOLDER}${folder}/${file}..."
-        timeout 15m python benchmark.py ${IN_FOLDER}${folder}/${file}
+for folder in $(ls -d ${IN_FOLDER}*/); do
+    echo "Running benchmark on ${folder}"
+    for file in $(ls ${folder}); do
+        echo -n "${folder}${file}..."
+        timeout 15m python benchmark.py ${folder}${file}
         echo " done"
     done
 done
