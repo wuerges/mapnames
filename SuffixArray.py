@@ -63,10 +63,5 @@ class SuffixArray:
         higher_bound = self.binary_search(string, lower=False)
         return lower_bound, higher_bound
 
-
-query = 'GATACA'
-sa = SuffixArray(['GATAGACA'])
-sa.build()
-print(sa.suffixes)
-lo, hi = sa.search_bounds(query)
-print(lo, sa.suffixes[lo], hi, sa.suffixes[hi])
+    def __call__(self, string):
+        return self.search_bounds(string)

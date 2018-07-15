@@ -4,6 +4,7 @@ import sys
 from time import time
 
 import Graph
+import SuffixArray as sa
 import tcc
 
 
@@ -19,13 +20,19 @@ def accuracy(matching, original_mapping):
 
 
 def benchmark(json_dict):
+    filter_U = sa.SuffixArray(list(json_dict.keys()))
+    filter_U.build()
+
+    filter_V = sa.SuffixArray(list(json_dict.values()))
+    filter_V.build()
+
     U = [Graph.Vertex(k) for k in json_dict.keys()]
     V = [Graph.Vertex(v) for v in json_dict.values()]
 
     G = Graph.BipartiteGraph(U, V)
 
     time_init = time()
-    G.set_prefs(tcc.vertex_diff)
+    G.set_prefs(tcc.vertex_diff, (filter_U, filter_V))
     matching = G.stable_match()
     time_end = time()
 

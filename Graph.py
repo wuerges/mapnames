@@ -1,5 +1,7 @@
 import operator as op
 
+import numpy as np
+
 
 class Vertex:
     def __init__(self, label):
@@ -9,18 +11,36 @@ class Vertex:
         self.prefs = None
         self.ratings = None
 
-    def set_prefs(self, others, fn):
-        """ Sets the preference list of this vertex, sorted by the results of fn.
+    def set_prefs(self, others, fn, filter_fn=None):
+        """ Sets the preference list of this vertex,
+        sorted by the results of fn.
 
-        fn must be a function accepting two vertices and returning an integer
-        that describes how closely related these two vertices are. In this
-        case, the function will be called with this vertex and every other
+        :param others: set of independent vertices to compute preference list
+        :param fn: must be a function accepting two vertices and returning
+        an integer that describes how closely related these two vertices are.
+        In this case, the function will be called with self and another
         vertex in others. The integers will be used to sort the preference
         list. They need not be the final vertex position.
+        :param filter_fn: a function taking self.label to filter the interval
+        in others to compare self to. Must return a tuple containing
+        (lower bound, upper bound)
+
+        # old param
+        :param eval_interval: a tuple containing (lower bound, upper bound)
+        for calling fn on others[lower bound:upper bound]. Default is None,
+        which means fn will be called for everyone in others.
         """
-        self.ratings = [(other, fn(self, other)) for other in others]
-        self.ratings.sort(key=op.itemgetter(1))
-        self.restore_prefs()
+        if filter_fn is None:
+            self.ratings = [(other, fn(self, other)) for other in others]
+        else:
+            lo, hi = filter_fn(self.label)
+            if lo > hi:  # SuffixArray does not guarantee this as of now
+                lo, hi = hi, lo
+            self.ratings = [(other, fn(self, other)) for other in others[lo:hi]]
+            self.ratings.extend([(other, np.inf) for other in others[0:lo]])
+            self.ratings.extend([(other, np.inf) for other in others[hi:None]])
+            self.ratings.sort(key=op.itemgetter(1))
+            self.restore_prefs()
 
     def restore_prefs(self):
         self.prefs = [other for (other, _) in self.ratings]
@@ -74,11 +94,39 @@ class BipartiteGraph:
             del w.prefs[succ_index:]
         return matching
 
-    def set_prefs(self, fn):
+    def set_prefs(self, h_fn, filters=None):
+        """ Sets the preference list for all u in self.U and all v in self.V.
+
+        :param h_fn: see Vertex.set_prefs()
+        :param filters: a tuple of callables (filter for U, filter for V)
+        :return:
+        """
+        filter_U, filter_V = None, None
+        if filters is not None:
+            filter_U, filter_V = filters
+
         for u in self.U:
-            u.set_prefs(self.V, fn)
+            u.set_prefs(self.V, h_fn, filter_V)
         for v in self.V:
-            v.set_prefs(self.U, fn)
+            v.set_prefs(self.U, h_fn, filter_U)
+        # else:
+        #     V_sa = sa.SuffixArray([v.label for v in self.V])
+        #     V_sa.build()
+        #     for u in self.U:
+        #         lo, hi = V_sa.search_bounds(u.label)
+        #         print('u', u.label, lo, hi)
+        #         if lo > hi:
+        #             lo, hi = hi, lo
+        #         u.set_prefs(self.V, h_fn, (lo, hi + 1))
+        #
+        #     U_sa = sa.SuffixArray([u.label for u in self.U])
+        #     U_sa.build()
+        #     for v in self.V:
+        #         lo, hi = U_sa.search_bounds(v.label)
+        #         print('v', v.label, lo, hi)
+        #         if lo > hi:
+        #             lo, hi = hi, lo
+        #         v.set_prefs(self.U, h_fn, (lo, hi + 1))
 
     def restore_prefs(self):
         for u in self.U:
