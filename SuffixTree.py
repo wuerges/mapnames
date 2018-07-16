@@ -116,8 +116,8 @@ with open(sys.argv[1]) as f:
         x[0].append(k)
         x[1].append(v)
 
-    x[0] = x[0][:100]
-    x[1] = x[1][:100]
+    #x[0] = x[0][:100]
+    #x[1] = x[1][:100]
 
     t1 = CreateTree(x[0])
     #t2 = CreateTree(x[1])
@@ -125,14 +125,8 @@ with open(sys.argv[1]) as f:
     for j, term in enumerate(x[1]):
         best = 1000
         best_wid = -1
-        for i in range(len(term)-5):
-
-            p, w, wid, sz = t1.search(term[i:i+5])
-            if sz < best:
-                best = sz
-                best_wid = wid
-        for i in range(len(term)-15):
-            p, w, wid, sz = t1.search(term[i:i+15])
+        for i in range(0, len(term)-1):
+            p, w, wid, sz = t1.search(term[i:])
             if sz < best:
                 best = sz
                 best_wid = wid
