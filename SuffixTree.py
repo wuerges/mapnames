@@ -66,96 +66,49 @@ class N:
                 else:
                     i += 1
 
-    def printg1(self):
-        print(r"\begin{tikzpicture}")
-        print(r'\graph[tree layout, grow=down, level distance=0.5in, sibling distance=0.5in,edge quotes mid,edges={nodes={fill=white,font=\tt}},nodes={exp}] {%')
-        self.printg(1)
-        self.printlinks(1)
-        print("};")
-        print(r"\end{tikzpicture}")
+    def search(self, term):
+        i = 0
+        x = self
+        while i < len(term) and x.real:
+            #print("searching ", term[:i+1])
+            if term[i] in x.child:
+                x = x.child[term[i]]
+                i += 1
+            else:
+                break
+        return x.p, x.word, x.wid
 
-
-    def printg(self, tab):
-        if not self.child:
-            print("{} [as={},imp];".format(self.id, esc(self.word[self.p:])))
-        else:
-            print("{} [as=];".format(self.id))
-            for k,v in self.child.items():
-                v.printg(tab+1);
-                print("{} ->[\"{}\"] {};".format(self.id, esc(k), v.id))
-
-
-    def printpgf(self, tab):
-        #if not self.real:
-        #    print(" " * tab, "child { node [draw,rectangle] {%s} }" % (self.word[self.p:]))
-        #    #print(" " * tab, ">", self.word[self.p:])
-        #else:
-        if not self.child:
-            #print(" " * tab, "child { node [draw, rectangle] {} }")
-            print(" " * tab, "child { node [draw,rectangle] {%s} }" % esc(self.word[self.p:]))
-        else:
-            #print(" " * tab, "child { node [draw, circle] {%s}" % (self.word[self.p]))
-            for k, v in self.child.items():
-                print(" " * tab, "child { node (%d) [draw, circle] {%s}" % (v.id, esc(k)))
-                v.printpgf(tab+1)
-                print(" " * tab, "}")
-
-                #print(" " * tab, k)
-            #print(" " * tab, "}")
-
-    def printlinks(self, tab):
-        try:
-            t = ""
-            if self.id == self.get_link().id:
-                t = ",loop"
-
-            print("{} ->[dashed{}] {};".format(self.id, t, self.get_link().id))
-        except:
-            pass
-        for k, v in self.child.items():
-            v.printlinks(tab+1)
-
-
-
-    def print(self, h):
-        if h==0:
-            print("digraph G {")
+    def dfs(self, l):
         if not self.real:
-            print("{} [label=\"{}\"];".format(self.id, self.word[self.p:]))
+            l.append((self.p, self.word, self.wid))
         else:
-            for k, v in self.child.items():
-                v.print(h+1)
-                print("{} -> {} [label=\"{}\"];".format(self.id, v.id, k))
-        if self.link:
-            print("{} -> {} [style=dotted];".format(self.link.id, self.id))
-        if h==0:
-            print("}")
+            for k,v in self.child.items():
+                v.dfs(l)
 
 
-if False:
-    s = input()
-    s += "$"
+def CreateTree(data, suf="#$!"):
     gen = idgen()
-    del t.child['$']
-    t.print(0)
-
+    t = N(None, "", 0, None, 0)
+    t.real = True
+    for i,s in enumerate(data):
+        t.add_suffix_it(s + suf + str(i), i)
+    return t
 
 import json
 
-t1 = N(None, "", 0, None, 0)
-t1.real = True
-
-t2 = N(None, "", 0, None, 0)
-t2.real = True
-
 with open(sys.argv[1]) as f:
     x = json.load(f)
-    for i,s in enumerate(x[0]):
-        t1.add_suffix_it(s, i+1)
 
-    for i,s in enumerate(x[1]):
-        t2.add_suffix_it(s, i+1)
+    x[0] = x[0][:100]
+    x[1] = x[1][:100]
 
-#print(x)
+    t1 = CreateTree(x[0])
+    #t2 = CreateTree(x[1])
+
+    for j, term in enumerate(x[1]):
+        for i in range(len(term)-15):
+            p, w, wid = t1.search(term[i:i+15])
+            print(i, term[i:i+15], j, wid, w)
+
 
 
