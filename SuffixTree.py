@@ -77,7 +77,13 @@ class N:
                 i += 1
             else:
                 break
-        return x.p, x.word, x.wid, x.size
+        if not x.real:
+            j = x.p
+            #print("xxx", i, term[i:], x.word[x.p:])
+            while i < len(term) and j < len(x.word) and term[i] == x.word[j]:
+                i += 1
+                j += 1
+        return x.p, x.word, x.wid, x.size, i
 
     def calcSize(self):
         if not self.real:
@@ -116,21 +122,45 @@ with open(sys.argv[1]) as f:
         x[0].append(k)
         x[1].append(v)
 
-    #x[0] = x[0][:100]
-    #x[1] = x[1][:100]
+    if len(sys.argv) > 2:
+        cut = int(sys.argv[2])
+        x[0] = x[0][:cut]
+        x[1] = x[1][:cut]
 
     t1 = CreateTree(x[0])
     #t2 = CreateTree(x[1])
 
+    count = 0
+    correct = 0
     for j, term in enumerate(x[1]):
-        best = 1000
+        count += 1
+        #best = 1000
+        best = 0
         best_wid = -1
-        for i in range(0, len(term)-1):
-            p, w, wid, sz = t1.search(term[i:])
-            if sz < best:
-                best = sz
+        best_term = term
+        best_sz = -1
+        for i in range(len(term)-1):
+            p, w, wid, sz, lm = t1.search(term[i:])
+            if lm > best:
+            #if sz < best:
+                best = lm
+                best_term = term[i:i+lm]
+                best_sz = sz
                 best_wid = wid
-        print(j, best_wid, term, best)
+
+        if j == best_wid:
+            correct += 1
+        else:
+            print("-"*10)
+            print(j, best_wid, best_sz, best_term)
+            print("original:", term)
+            print("cut:", best_term)
+            print(x[0][j])
+            print(x[1][j])
+            print(x[0][best_wid])
+            print(x[1][best_wid])
+
+    print(count, correct)
 
 
 
