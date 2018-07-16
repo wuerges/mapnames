@@ -97,7 +97,12 @@ def CreateTree(data, suf="#$!"):
 import json
 
 with open(sys.argv[1]) as f:
-    x = json.load(f)
+    ds = json.load(f)
+
+    x = [[],[]]
+    for k,v in ds.items():
+        x[0].append(k)
+        x[1].append(v)
 
     x[0] = x[0][:100]
     x[1] = x[1][:100]
