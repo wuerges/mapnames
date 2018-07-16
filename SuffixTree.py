@@ -28,6 +28,7 @@ class N:
         self.child = {}
         self.real = False
         self.wid = wid
+        self.size = -1
 
     def materialize(self):
         if self.real:
@@ -76,7 +77,17 @@ class N:
                 i += 1
             else:
                 break
-        return x.p, x.word, x.wid
+        return x.p, x.word, x.wid, x.size
+
+    def calcSize(self):
+        if not self.real:
+            self.size = 1
+        else:
+            r = 0
+            for k,v in self.child.items():
+                v.calcSize()
+                r += v.size
+            self.size = r
 
     def dfs(self, l):
         if not self.real:
@@ -92,6 +103,7 @@ def CreateTree(data, suf="#$!"):
     t.real = True
     for i,s in enumerate(data):
         t.add_suffix_it(s + suf + str(i), i)
+    t.calcSize()
     return t
 
 import json
@@ -111,9 +123,20 @@ with open(sys.argv[1]) as f:
     #t2 = CreateTree(x[1])
 
     for j, term in enumerate(x[1]):
+        best = 1000
+        best_wid = -1
+        for i in range(len(term)-5):
+
+            p, w, wid, sz = t1.search(term[i:i+5])
+            if sz < best:
+                best = sz
+                best_wid = wid
         for i in range(len(term)-15):
-            p, w, wid = t1.search(term[i:i+15])
-            print(i, term[i:i+15], j, wid, w)
+            p, w, wid, sz = t1.search(term[i:i+15])
+            if sz < best:
+                best = sz
+                best_wid = wid
+        print(j, best_wid, term, best)
 
 
 
