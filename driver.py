@@ -1,6 +1,8 @@
 from optparse import OptionParser
 from SuffixTree import CreateTree
 import json
+import gc
+import progressbar
 
 parser = OptionParser()
 parser.add_option("-l", "--limit", dest="limit", type="int",
@@ -17,6 +19,7 @@ result = []
 
 for arg in args:
     with open(arg) as f:
+        print("Working on input", arg)
         x = json.load(f)
         if type(x) is dict:
             x = [list(x.keys()), list(x.values())]
@@ -24,12 +27,17 @@ for arg in args:
         if options.limit:
             x[0] = x[0][:options.limit]
             x[1] = x[1][:options.limit]
+        gc.collect()
 
+        print("Creating Tree")
         t1 = CreateTree(x[0])
 
         count = 0
         correct = 0
-        for j, term in enumerate(x[1]):
+        j = 0
+
+        print("Matching Terms")
+        for term in progressbar.progressbar(x[1]):
             count += 1
 
             # the score of the best match
@@ -53,6 +61,7 @@ for arg in args:
 
             if j == best_wid:
                 correct += 1
+            j += 1
             #else:
                 #print("-"*10)
                 #print(j, best_wid, best_sz, best_term)
@@ -64,6 +73,8 @@ for arg in args:
                 #print(x[1][best_wid])
 
         result.append([count, correct])
+        del t1
+        gc.collect()
 
 
 print(result, sum(a/b for [b,a] in result)/len(result))

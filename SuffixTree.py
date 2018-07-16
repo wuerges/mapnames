@@ -1,6 +1,7 @@
 #import sys
 #sys.setrecursionlimit(int(1e7))
 
+
 def esc(s):
     a = []
     for c in s:
@@ -107,8 +108,13 @@ def CreateTree(data, suf="#$!"):
     gen = idgen()
     t = N(None, "", 0, None, 0)
     t.real = True
-    for i,s in enumerate(data):
+    import progressbar
+
+    i = 0
+    for s in progressbar.progressbar(data):
         t.add_suffix_it(s + suf + str(i), i)
+        i+= 1
+
     t.calcSize()
     return t
 
