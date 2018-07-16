@@ -52,16 +52,32 @@ class SuffixArray:
                 hi -= 1
         return lo if lower else hi
 
-    def search_bounds(self, string):
+    def suffix_bounds(self, string):
         """ Searches for both lower and upper bounds
         for string on self.suffixes.
 
         :param string: string to search for
-        :return: tuple containing lower and upper bounds
+        :return: tuple containing lower and upper bounds of self.suffixes
         """
         lower_bound = self.binary_search(string)
-        higher_bound = self.binary_search(string, lower=False)
-        return lower_bound, higher_bound
+        upper_bound = self.binary_search(string, lower=False)
+        if lower_bound > upper_bound:
+            lower_bound, upper_bound = upper_bound, lower_bound
+        return lower_bound, upper_bound
+
+    def indices_between_bounds(self, string):
+        """ Given the lower and upper bounds on self.suffixes,
+        returns a list of indices of self.strings which point
+        to the strings that own the suffixes between the bounds.
+
+        (What a good explanation, huh)
+
+        :param string: string to search for
+        :return: list of indices pointing to filtered strings of self.strings
+        """
+        lower_bound, upper_bound = self.suffix_bounds(string)
+        return [self.suffixes[i][1]
+                for i in range(lower_bound, upper_bound + 1)]
 
     def __call__(self, string):
-        return self.search_bounds(string)
+        return self.indices_between_bounds(string)
