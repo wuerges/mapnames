@@ -1,4 +1,4 @@
-import sys
+#import sys
 #sys.setrecursionlimit(int(1e7))
 
 def esc(s):
@@ -111,56 +111,5 @@ def CreateTree(data, suf="#$!"):
         t.add_suffix_it(s + suf + str(i), i)
     t.calcSize()
     return t
-
-import json
-
-with open(sys.argv[1]) as f:
-    ds = json.load(f)
-
-    x = [[],[]]
-    for k,v in ds.items():
-        x[0].append(k)
-        x[1].append(v)
-
-    if len(sys.argv) > 2:
-        cut = int(sys.argv[2])
-        x[0] = x[0][:cut]
-        x[1] = x[1][:cut]
-
-    t1 = CreateTree(x[0])
-    #t2 = CreateTree(x[1])
-
-    count = 0
-    correct = 0
-    for j, term in enumerate(x[1]):
-        count += 1
-        #best = 1000
-        best = 0
-        best_wid = -1
-        best_term = term
-        best_sz = -1
-        for i in range(len(term)-1):
-            p, w, wid, sz, lm = t1.search(term[i:])
-            if lm > best:
-            #if sz < best:
-                best = lm
-                best_term = term[i:i+lm]
-                best_sz = sz
-                best_wid = wid
-
-        if j == best_wid:
-            correct += 1
-        else:
-            print("-"*10)
-            print(j, best_wid, best_sz, best_term)
-            print("original:", term)
-            print("cut:", best_term)
-            print(x[0][j])
-            print(x[1][j])
-            print(x[0][best_wid])
-            print(x[1][best_wid])
-
-    print(count, correct)
-
 
 
