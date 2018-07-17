@@ -83,12 +83,10 @@ for arg in args:
         del t1
         gc.collect()
 
-        print("x")
         ps = g.makeprefs()
-        #del g
-        print("y")
+        del g
 
-        res = gs.GaleShapley(g.p, ps)
+        res = gs.GaleShapley(ps)
         #print(res)
 
         c1 = 0
@@ -100,5 +98,7 @@ for arg in args:
 
         result_match.append([c2, c1])
 
+print("Results without matching")
 print(result, sum(a/b for [b,a] in result)/len(result))
+print("Results using crappy matching")
 print(result_match, sum(a/b for [b,a] in result_match)/len(result_match))

@@ -22,7 +22,7 @@ class G:
         return ps
 
 
-def GaleShapley(pref, ps):
+def GaleShapley(ps):
     xs = list(range(len(ps)))
     engaged = {}
     ys = set(xs)
@@ -32,14 +32,10 @@ def GaleShapley(pref, ps):
             y = ps[x].pop(0)
             if y in engaged:
                 xn = engaged[y]
-                if pref[x][y] > pref[xn][y]:
-                    xs.append(xn)
-                    engaged[y] = x
-                else:
-                    xs.append(x)
+                xs.append(xn)
             else:
-                engaged[y] = x
                 ys.remove(y)
+            engaged[y] = x
         else:
             y = ys.pop()
             engaged[y] = x
