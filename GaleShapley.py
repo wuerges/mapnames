@@ -13,7 +13,6 @@ class G:
 
     def makeprefs(self):
 
-        print(self.p)
         ps = [[(b, a) for (a,b) in x.items()] for x in self.p]
         for p in ps:
             p.sort()
@@ -23,16 +22,26 @@ class G:
         return ps
 
 
-def GaleShapley(ps):
+def GaleShapley(pref, ps):
     xs = list(range(len(ps)))
     engaged = {}
+    ys = set(xs)
     while xs:
         x = xs.pop(0)
         if ps[x]:
             y = ps[x].pop(0)
             if y in engaged:
                 xn = engaged[y]
-                xs.append(xn)
+                if pref[x][y] > pref[xn][y]:
+                    xs.append(xn)
+                    engaged[y] = x
+                else:
+                    xs.append(x)
+            else:
+                engaged[y] = x
+                ys.remove(y)
+        else:
+            y = ys.pop()
             engaged[y] = x
 
     return engaged

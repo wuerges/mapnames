@@ -3,6 +3,7 @@ from SuffixTree import CreateTree
 import json
 import gc
 import progressbar
+import GaleShapley as gs
 
 parser = OptionParser()
 parser.add_option("-l", "--limit", dest="limit", type="int",
@@ -14,8 +15,8 @@ parser.add_option("-l", "--limit", dest="limit", type="int",
 
 (options, args) = parser.parse_args()
 
-
 result = []
+result_match = []
 
 for arg in args:
     with open(arg) as f:
@@ -31,6 +32,8 @@ for arg in args:
 
         print("Creating Tree")
         t1 = CreateTree(x[0])
+
+        g = gs.G(len(x[0]))
 
         count = 0
         correct = 0
@@ -52,6 +55,10 @@ for arg in args:
                 #score = lm
                 #score = 1/sz
                 score = lm/sz
+
+                g.grade(j, wid, sz)
+                g.grade(wid, j, lm)
+
                 if score > best:
                 #if sz < best:
                     best = score
@@ -76,5 +83,22 @@ for arg in args:
         del t1
         gc.collect()
 
+        print("x")
+        ps = g.makeprefs()
+        #del g
+        print("y")
+
+        res = gs.GaleShapley(g.p, ps)
+        #print(res)
+
+        c1 = 0
+        c2 = 0
+        for a, b in res.items():
+            c2 += 1
+            if a == b:
+                c1 += 1
+
+        result_match.append([c2, c1])
 
 print(result, sum(a/b for [b,a] in result)/len(result))
+print(result_match, sum(a/b for [b,a] in result_match)/len(result_match))
