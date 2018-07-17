@@ -5,7 +5,7 @@ import gc
 import progressbar
 import GaleShapley as gs
 
-parser = OptionParser()
+parser = OptionParser(usage = "usage %prog [options] json1 json2 ...")
 parser.add_option("-l", "--limit", dest="limit", type="int",
                   help="set a LIMIT ot the number of strings from input", metavar="LIMIT")
 
@@ -15,6 +15,9 @@ parser.add_option("-l", "--limit", dest="limit", type="int",
 
 (options, args) = parser.parse_args()
 
+if not args:
+    parser.print_help()
+    exit(0)
 result = []
 result_match = []
 
