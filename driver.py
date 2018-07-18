@@ -5,6 +5,10 @@ import gc
 import progressbar
 import GaleShapley as gs
 
+"""
+This module is the driver program that can be used to process the testcases.
+"""
+
 parser = OptionParser(usage = "usage %prog [options] json1 json2 ...")
 parser.add_option("-l", "--limit", dest="limit", type="int",
                   help="set a LIMIT ot the number of strings from input", metavar="LIMIT")
