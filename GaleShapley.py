@@ -1,3 +1,5 @@
+import progressbar
+
 """
 This module performs a crappy matching, inspired by GaleShapley's stable matching.
 
@@ -86,22 +88,23 @@ def GaleShapley(pref, ps):
 
     xs = list(range(len(ps)))
     engaged = {}
-    while xs:
-        x = xs.pop(0)
-        if ps[x]:
-            y = ps[x][0]
 
-            if y in engaged:
-                xn = engaged[y]
-                if get_pref(x, y) > get_pref(xn, y):
-                    xs.append(xn)
-                    engaged[y] = x
+    with progressbar.ProgressBar(max_value=len(xs)) as bar:
+        while xs:
+            x = xs.pop(0)
+            if ps[x]:
+                y = ps[x].pop(0)
+
+                if y in engaged:
+                    xn = engaged[y]
+                    if get_pref(x, y) > get_pref(xn, y):
+                        xs.append(xn)
+                        engaged[y] = x
+                    else:
+                        xs.append(x)
                 else:
-                    ps[x].pop(0)
-                    xs.append(x)
-            else:
-                engaged[y] = x
-                ps[x].pop(0)
+                    engaged[y] = x
+            bar.update(len(xs))
 
     ns = set(range(len(ps)))
 
