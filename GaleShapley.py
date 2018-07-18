@@ -62,8 +62,7 @@ class G:
 
         return ps
 
-
-def GaleShapley(ps):
+def GaleShapley(pref, ps):
     """
     Performs crappy matching.
 
@@ -79,22 +78,38 @@ def GaleShapley(ps):
     dict ( int -> int )
         Returns a dict with the matching. The keys are set from Y to X.
     """
+
+    def get_pref(k, l):
+        if k in pref and l in pref[k]:
+            return pref[k][l]
+        return 0
+
     xs = list(range(len(ps)))
     engaged = {}
-    ys = set(xs)
     while xs:
         x = xs.pop(0)
         if ps[x]:
-            y = ps[x].pop(0)
+            y = ps[x][0]
+
             if y in engaged:
                 xn = engaged[y]
-                xs.append(xn)
+                if get_pref(x, y) > get_pref(xn, y):
+                    xs.append(xn)
+                    engaged[y] = x
+                else:
+                    ps[x].pop(0)
+                    xs.append(x)
             else:
-                ys.remove(y)
-            engaged[y] = x
-        else:
-            y = ys.pop()
-            engaged[y] = x
+                engaged[y] = x
+                ps[x].pop(0)
+
+    ns = set(range(len(ps)))
+
+    exs = ns - set(engaged.values())
+    eys = ns - set(engaged.keys())
+
+    for x,y in zip(exs, eys):
+        engaged[y] = x
 
     return engaged
 

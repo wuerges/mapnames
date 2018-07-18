@@ -15,7 +15,8 @@ def preference_list(draw, b=2, t=100):
 
 @given(preference_list())
 def test_gale_shapely_runs(x):
-    rs = gs.GaleShapley(x)
+    pref = {}
+    rs = gs.GaleShapley(pref, x)
 
     xs = list(rs.keys())
     ys = list(rs.values())
@@ -29,9 +30,14 @@ def test_gale_shapely_runs(x):
 
 def test_gale_shapley_1():
     ps = [[], [4], [4, 2, 1, 3, 0], [1, 4, 2, 3, 0], []]
-    rs = [(0, 0), (1, 3), (2, 4), (3, 1), (4, 2)]
+    rs = [(0, 0), (1, 4), (2, 2), (3, 1), (4, 3)]
+    pref = {}
 
-    rx = [(a,b) for (b,a) in gs.GaleShapley(ps).items()]
+    rx = [(a,b) for (b,a) in gs.GaleShapley(pref, ps).items()]
     rx.sort()
+    print(rx)
     assert rx == rs
+
+
+
 
