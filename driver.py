@@ -63,10 +63,10 @@ for arg in args:
                 #score = 1/sz
                 score = lm/sz
 
-                g.grade(j, wid, sz)
-                g.grade(wid, j, lm)
-
                 if score > best:
+                    g.grade(j, wid, lm/sz)
+                    g.grade(wid, j, lm/sz)
+
                 #if sz < best:
                     best = score
                     best_term = term[i:i+lm]
@@ -105,7 +105,7 @@ for arg in args:
 
         result_match.append([c2, c1])
 
-print("Results without matching")
-print(result, sum(a/b for [b,a] in result)/len(result))
-print("Results using crappy matching")
-print(result_match, sum(a/b for [b,a] in result_match)/len(result_match))
+        print("Results without matching")
+        print(result, sum(a/b for [b,a] in result)/len(result))
+        print("Results using crappy matching")
+        print(result_match, sum(a/b for [b,a] in result_match)/len(result_match))
