@@ -91,9 +91,9 @@ for arg in args:
         gc.collect()
 
         ps = g.makeprefs()
-        del g
+        #del g
 
-        res = gs.GaleShapley(ps)
+        res = gs.GaleShapley(g.p, ps)
         #print(res)
 
         c1 = 0
