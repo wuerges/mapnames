@@ -1,11 +1,10 @@
+import argparse
 import json
-import os
-import sys
 from time import time
 
 import Graph
-import SuffixArray as sa
 import tcc
+from SuffixArray import SuffixArray
 
 
 def accuracy(matching, original_mapping):
@@ -20,19 +19,26 @@ def accuracy(matching, original_mapping):
 
 
 def benchmark(json_dict):
-    filter_U = sa.SuffixArray(list(json_dict.keys()))
-    filter_U.build()
+    # keys = random.sample(the_dict, 1000)
+    # values = [json_dict[k] for k in keys]
 
-    filter_V = sa.SuffixArray(list(json_dict.values()))
-    filter_V.build()
+    keys = list(json_dict.keys())
+    values = list(json_dict.values())
 
-    U = [Graph.Vertex(k) for k in json_dict.keys()]
-    V = [Graph.Vertex(v) for v in json_dict.values()]
+    U_sa = SuffixArray(keys)
+    U_sa.build()
+
+    V_sa = SuffixArray(values)
+    V_sa.build()
+
+    U = [Graph.Vertex(u) for u in keys]
+    V = [Graph.Vertex(v) for v in values]
 
     G = Graph.BipartiteGraph(U, V)
 
     time_init = time()
-    G.set_prefs(tcc.vertex_diff, (filter_U, filter_V))
+    G.set_prefs(tcc.vertex_diff)
+    # G.set_prefs(tcc.vertex_diff, (U_sa, V_sa))
     matching = G.stable_match()
     time_end = time()
 
@@ -41,49 +47,37 @@ def benchmark(json_dict):
     return matching, time_end - time_init, acc, errs
 
 
-def output(out_file_path, x, y):
-    if os.path.exists(out_file_path):
-        with open(out_file_path, 'a') as outf:
-            print(f'{x}, {y}', file=outf)
-    else:
-        with open(out_file_path, 'w') as outf:
-            print('x, y', file=outf)
-            print(f'{x}, {y}', file=outf)
+def output(output_path, x, y):
+    with open(output_path, 'a') as out_file:
+        print(f'{x}, {y}', file=out_file)
 
 
-def run_for_file(test_case_path):
-    with open(test_case_path, 'r') as test_file:
-        test_json = json.load(test_file)
+def main():
+    print('Running benchmark with arguments:', args)
 
-    matching, sec, acc, errs = benchmark(test_json)
+    with open(args.json, 'r') as input_json:
+        input_dict = json.load(input_json)
 
-    paths = test_case_path.split('/')
-    out_dir = paths[0]
-    test_case = paths[1]
-    size = paths[-1][:-5]
+    size = len(input_dict)
+    matching, sec, acc, errs = benchmark(input_dict)
 
-    out_sec_path = f'{out_dir}/{test_case}_sec.csv'
-    out_acc_path = f'{out_dir}/{test_case}_acc.csv'
-
-    # print(out_sec_path, size, sec)
-    # print(out_acc_path, size, acc)
-
-    output(out_sec_path, size, sec)
-    output(out_acc_path, size, acc)
-
-    # print('Errors:')
-    # for v in errs:
-    #     print(f'{v.label}\n'
-    #           '\twas mapped to\n'
-    #           f'{matching[v].label},\n'
-    #           '\tbut should have been to\n'
-    #           f'{test_json[v.label]}\n')
+    paths = args.json.split('/')
+    filename = paths[-1]
+    for label, value in zip(['sec', 'acc'], [sec, acc]):
+        output_path = f'{args.outdir}/{filename}_{label}.csv'
+        if args.reset:
+            with open(output_path, 'w') as out_file:
+                print('x, y', file=out_file)
+        output(output_path, size, value)
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print('Missing arguments.'
-              f' Usage:\npython {sys.argv[0]} <.json file>')
-        exit(0)
+    argp = argparse.ArgumentParser()
+    argp.add_argument('json', type=str, help='path to .json input file')
+    argp.add_argument('outdir', type=str,
+                      help='directory to output time and accuracy as files')
+    argp.add_argument('-r', '--reset', action='store_true',
+                      help='reset file before output')
+    args = argp.parse_args()
 
-    run_for_file(sys.argv[1])
+    main()
