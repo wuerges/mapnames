@@ -11,29 +11,20 @@ class Vertex:
         self.prefs = None
         self.ratings = None
 
-    def set_prefs(self, others, fn, filter_fn=None):
+    def set_prefs(self, others, h_fn):
         """ Sets the preference list of this vertex,
         sorted by the results of fn.
 
         :param others: set of other vertices to compute preference list against
-        :param fn: must be a function accepting two vertices and returning
+        :param h_fn: must be a function accepting two vertices and returning
         an integer that describes how closely related these two vertices are.
         In this case, the function will be called with self and another
         vertex in others. The integers will be used to sort the preference
         list. They need not be the final vertex position.
-        :param filter_fn: a function taking self.label to filter vertices
-        in others to compare self to. Must return a list of indices over others.
         """
-        if filter_fn is None:
-            self.ratings = [(other, fn(self, other)) for other in others]
-        else:
-            self.ratings = [[others[i], np.inf] for i in range(len(others))]
-            indices_fn = filter_fn(self.label)
-            print(self.label, len(indices_fn))
-            for i in indices_fn:
-                self.ratings[i][1] = fn(self, others[i])
-            self.ratings.sort(key=op.itemgetter(1))
-            self.restore_prefs()
+        self.ratings = [(other, h_fn(self, other)) for other in others]
+        self.ratings.sort(key=op.itemgetter(1))
+        self.restore_prefs()
 
     def restore_prefs(self):
         self.prefs = [other for (other, _) in self.ratings]
@@ -47,8 +38,8 @@ class Vertex:
 
 class BipartiteGraph:
     def __init__(self, U, V):
-        self.U = U
-        self.V = V
+        self.U = U if type(U) is np.ndarray else np.array(U)
+        self.V = V if type(V) is np.ndarray else np.array(V)
 
     def stable_match(self):
         """ Irving weakly-stable marriage algorithm.
@@ -91,18 +82,23 @@ class BipartiteGraph:
         """ Sets the preference list for all u in self.U and all v in self.V.
 
         :param h_fn: see Vertex.set_prefs()
-        :param filters: a tuple of callables (filter for U, filter for V)
+        :param filters: a tuple of callables (filter on U, filter on V)
         """
-        filter_U, filter_V = None, None
+        filter_on_U, filter_on_V = None, None
         if filters is not None:
-            filter_U, filter_V = filters
+            filter_on_U, filter_on_V = filters
 
-        print('U')
-        for u in self.U:
-            u.set_prefs(self.V, h_fn, filter_V)
-        print('V')
-        for v in self.V:
-            v.set_prefs(self.U, h_fn, filter_U)
+        for these, those, filter_on_them in \
+                zip([self.U, self.V],
+                    [self.V, self.U],
+                    [filter_on_V, filter_on_U]):
+            for this in these:
+                if filter_on_them is not None:
+                    filtrd_idxs = filter_on_them(this.label)
+                    them = those[filtrd_idxs]
+                else:
+                    them = those
+                this.set_prefs(them, h_fn)
 
     def restore_prefs(self):
         for u in self.U:
