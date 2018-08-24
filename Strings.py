@@ -42,7 +42,10 @@ def trim_both_equal(str1, str2):
 
 
 def wagner_fischer(str1, str2, trim=False):
-    a, b = trim_both_equal(str1, str2) if trim else str1, str2
+    if trim:
+        a, b = trim_both_equal(str1, str2)
+    else:
+        a, b = str1, str2
     m, n = len(a), len(b)
     D = np.empty((m + 1, n + 1), dtype=np.int64)
     # Positions of D represent the edit distance from s1 to s2 where row
@@ -67,9 +70,3 @@ def wagner_fischer(str1, str2, trim=False):
     # [-1][-1] is the last column of the last row, which holds the edit
     # distance of the whole str1 and str2 strings
     return D[-1][-1]
-
-
-# Did not put on Vertex class because
-# this is too non-standard for graphs
-def vertex_diff(u, v):
-    return wagner_fischer(u.label, v.label, True)

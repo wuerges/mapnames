@@ -2,12 +2,13 @@ import argparse
 import json
 from time import time
 
+from ortools.graph import pywrapgraph
+
 import Graph
-import tcc
 from SuffixArray import SuffixArray
 
 
-def accuracy(matching, original_mapping):
+def accuracy_marriage(matching, original_mapping):
     errors = []
     equal_amount = 0
     for k, v in matching.items():
@@ -18,33 +19,96 @@ def accuracy(matching, original_mapping):
     return equal_amount / len(matching), errors
 
 
-def benchmark(json_dict):
-    # keys = random.sample(the_dict, 1000)
-    # values = [json_dict[k] for k in keys]
+def accuracy_assignment(assignment, bipartite_matcher, original_mapping):
+    errors = []
+    equal_amount = 0
+    for l in range(assignment.NumNodes()):
+        r = assignment.RightMate(l)
+        is_equal = bipartite_matcher.right[r].label == \
+                   original_mapping[bipartite_matcher.left[l].label]
+        equal_amount += int(is_equal)
+        if not is_equal:
+            errors.append(l)
+    return equal_amount / assignment.NumNodes(), errors
 
+
+def assignment_bench(json_dict):
     keys = list(json_dict.keys())
     values = list(json_dict.values())
 
-    U_sa = SuffixArray(keys)
-    U_sa.build()
+    matcher = Graph.BipartiteMatcher(keys, values, SuffixArray)
+    time_init = time()
+    matcher.set_prefs(Graph.vertex_diff)
+    time_end_prefs = time()
+    assignment = pywrapgraph.LinearSumAssignment()
 
-    V_sa = SuffixArray(values)
-    V_sa.build()
+    for these in [matcher.left, matcher.right]:
+        for this in these:
+            for rating in this.ratings:
+                assignment.AddArcWithCost(this.idx, rating[0].idx,
+                                          int(rating[1]))
 
-    U = [Graph.Vertex(u) for u in keys]
-    V = [Graph.Vertex(v) for v in values]
+    solve_status = assignment.Solve()
+    time_end = time()
 
-    G = Graph.BipartiteGraph(U, V)
+    prefs_time = time_end_prefs - time_init
+    total_time = time_end - time_init
+    acc, errs = 0, []
+    if solve_status == assignment.OPTIMAL:
+        acc, errs = accuracy_assignment(assignment, matcher, json_dict)
+        for i in errs:
+            print('----------------------> %s\n'
+                  '  got mapped to       : %s\n'
+                  '  but should have been: %s\n'
+                  '  Cost = %d' % (
+                      matcher.left[i],
+                      matcher.right[assignment.RightMate(i)],
+                      matcher.right[i],
+                      assignment.AssignmentCost(i)))
+        print(f'{len(errs)} wrong assignments')
+        print('Accuracy:', acc)
+        print('Total cost:', assignment.OptimalCost())
+    elif solve_status == assignment.INFEASIBLE:
+        print('No assignment is possible.')
+    elif solve_status == assignment.POSSIBLE_OVERFLOW:
+        print(
+            'Some input costs are too large and may cause an integer overflow.')
+    print(f'Preferences run time: {prefs_time} seconds'
+          f' ({prefs_time / 60} minutes)')
+    print(f'Total run time: {total_time} seconds'
+          f' ({total_time / 60} minutes)')
+
+    return {
+        'total_time': total_time,
+        'preferences_time': prefs_time,
+        'accuracy': acc,
+        'errors': errs
+    }
+
+
+def benchmark(json_dict):
+    keys = list(json_dict.keys())
+    values = list(json_dict.values())
+
+    G = Graph.BipartiteMatcher(keys, values)
 
     time_init = time()
-    G.set_prefs(tcc.vertex_diff)
-    # G.set_prefs(tcc.vertex_diff, (U_sa, V_sa))
+    G.set_prefs(Graph.vertex_diff)
+    time_end_prefs = time()
     matching = G.stable_match()
     time_end = time()
 
-    acc, errs = accuracy(matching, json_dict)
+    prefs_time = time_end_prefs - time_init
+    total_time = time_end - time_init
+    acc, errs = accuracy_marriage(matching, json_dict)
 
-    return matching, time_end - time_init, acc, errs
+    return {
+        'matching': matching,
+        'total_time': total_time,
+        'preferences_time': prefs_time,
+        'accuracy': acc,
+        'errors': errs
+    }
 
 
 def output(output_path, x, y):
@@ -59,11 +123,12 @@ def main():
         input_dict = json.load(input_json)
 
     size = len(input_dict)
-    matching, sec, acc, errs = benchmark(input_dict)
+    rslts = assignment_bench(input_dict)
 
     paths = args.json.split('/')
     filename = paths[-1]
-    for label, value in zip(['sec', 'acc'], [sec, acc]):
+    for label, value in \
+            zip(['sec', 'acc'], [rslts['total_time'], rslts['accuracy']]):
         output_path = f'{args.outdir}/{filename}_{label}.csv'
         if args.reset:
             with open(output_path, 'w') as out_file:

@@ -2,18 +2,19 @@ import operator as op
 
 import numpy as np
 
+from Strings import wagner_fischer
+
 
 class Vertex:
-    def __init__(self, label):
-        # edges list not necessary
-        # because of preferences list
+    def __init__(self, label, idx=None):
         self.label = label
+        self.idx = idx
         self.prefs = None
         self.ratings = None
 
-    def set_prefs(self, others, h_fn):
-        """ Sets the preference list of this vertex,
-        sorted by the results of fn.
+    def set_prefs(self, others, h_fn, sort=False, ref_only=False):
+        """ Sets the preference list of this vertex according to the results of
+        h_fn.
 
         :param others: set of other vertices to compute preference list against
         :param h_fn: must be a function accepting two vertices and returning
@@ -21,10 +22,15 @@ class Vertex:
         In this case, the function will be called with self and another
         vertex in others. The integers will be used to sort the preference
         list. They need not be the final vertex position.
+        :param sort: if the preference list should be sorted at the end
+        :param ref_only: if the preference list should be left with only
+        references to vertices instead of (vertex reference, h_fn result)
         """
         self.ratings = [(other, h_fn(self, other)) for other in others]
-        self.ratings.sort(key=op.itemgetter(1))
-        self.restore_prefs()
+        if sort:
+            self.ratings.sort(key=op.itemgetter(1))
+        if ref_only:
+            self.restore_prefs()
 
     def restore_prefs(self):
         self.prefs = [other for (other, _) in self.ratings]
@@ -36,10 +42,26 @@ class Vertex:
         return self.__str__()
 
 
-class BipartiteGraph:
-    def __init__(self, U, V):
-        self.U = U if type(U) is np.ndarray else np.array(U)
-        self.V = V if type(V) is np.ndarray else np.array(V)
+class BipartiteMatcher:
+    def __init__(self, left, right, filter_class=None):
+        """
+        :param left: left set of elements
+        :param right: right set of elements
+        :param filter_class: a callable Suffix Tree-like class to build()
+        filters for left and right sets. Upon called with a string, must
+        return a list of indexes of candidates to compare to that string.
+        """
+        self.left = np.array([Vertex(left[l], l) for l in range(len(left))])
+        self.right = np.array([Vertex(right[r], r) for r in range(len(right))])
+        self.filter_on_left = None
+        self.filter_on_right = None
+        if filter_class is not None:
+            # filter_on_left is used to filter left-side candidates,
+            # thus should be queried with a right vertex (and vice-versa)
+            self.filter_on_left = filter_class(left)
+            self.filter_on_left.build()
+            self.filter_on_right = filter_class(right)
+            self.filter_on_right.build()
 
     def stable_match(self):
         """ Irving weakly-stable marriage algorithm.
@@ -50,7 +72,7 @@ class BipartiteGraph:
         husband = {}
         matching = {}
         # preferences list will get screwed...
-        free_men = set(self.U)
+        free_men = set(self.left)
         while len(free_men) > 0:
             m = free_men.pop()
             w = m.prefs[0]
@@ -78,20 +100,16 @@ class BipartiteGraph:
             del w.prefs[succ_index:]
         return matching
 
-    def set_prefs(self, h_fn, filters=None):
-        """ Sets the preference list for all u in self.U and all v in self.V.
+    def set_prefs(self, h_fn):
+        """ Sets the preference list for all vertices in the left set against
+        all in the right, and all in the right set against all in the left.
 
-        :param h_fn: see Vertex.set_prefs()
-        :param filters: a tuple of callables (filter on U, filter on V)
+        :param h_fn: see Vertex.set_prefs
         """
-        filter_on_U, filter_on_V = None, None
-        if filters is not None:
-            filter_on_U, filter_on_V = filters
-
         for these, those, filter_on_them in \
-                zip([self.U, self.V],
-                    [self.V, self.U],
-                    [filter_on_V, filter_on_U]):
+                zip([self.left, self.right],
+                    [self.right, self.left],
+                    [self.filter_on_right, self.filter_on_left]):
             for this in these:
                 if filter_on_them is not None:
                     filtrd_idxs = filter_on_them(this.label)
@@ -101,7 +119,13 @@ class BipartiteGraph:
                 this.set_prefs(them, h_fn)
 
     def restore_prefs(self):
-        for u in self.U:
+        for u in self.left:
             u.restore_prefs()
-        for v in self.V:
+        for v in self.right:
             v.restore_prefs()
+
+
+# Did not put on Vertex class because
+# this is too non-standard for graphs
+def vertex_diff(u, v):
+    return wagner_fischer(u.label, v.label, True)

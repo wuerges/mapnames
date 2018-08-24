@@ -1,6 +1,7 @@
-import tcc
 import string
 import unittest as ut
+
+import Strings
 
 
 class EditDistanceTest(ut.TestCase):
@@ -8,32 +9,33 @@ class EditDistanceTest(ut.TestCase):
     def test_identity(self):
         for i in range(len(string.digits)):
             id = string.digits[:i]
-            self.assertEqual(tcc.wagner_fischer(id, id), 0)
+            self.assertEqual(Strings.wagner_fischer(id, id), 0)
 
     def test_one_empty(self):
         for i in range(len(string.digits)):
             s = string.digits[:i]
-            self.assertEqual(tcc.wagner_fischer('', s), i)
-            self.assertEqual(tcc.wagner_fischer(s, ''), i)
+            self.assertEqual(Strings.wagner_fischer('', s), i)
+            self.assertEqual(Strings.wagner_fischer(s, ''), i)
 
     def test_ascending(self):
         for i in range(len(string.digits)):
             s1 = string.digits[:i]
             for j in range(len(string.digits)):
                 s2 = string.digits[:j]
-                self.assertEqual(tcc.wagner_fischer(s1, s2), abs(i - j))
+                self.assertEqual(Strings.wagner_fischer(s1, s2), abs(i - j))
 
     def test_misc(self):
-        self.assertEqual(tcc.wagner_fischer('abc', 'b'), 2)
-        self.assertEqual(tcc.wagner_fischer('abc', 'b'), 2)
-        self.assertEqual(tcc.wagner_fischer('abc', 'ac'), 1)
-        self.assertEqual(tcc.wagner_fischer('abc', 'bc'), 1)
-        self.assertEqual(tcc.wagner_fischer('abcdefg', 'abce'), 3)
+        self.assertEqual(Strings.wagner_fischer('abc', 'b'), 2)
+        self.assertEqual(Strings.wagner_fischer('abc', 'b'), 2)
+        self.assertEqual(Strings.wagner_fischer('abc', 'ac'), 1)
+        self.assertEqual(Strings.wagner_fischer('abc', 'bc'), 1)
+        self.assertEqual(Strings.wagner_fischer('abcdefg', 'abce'), 3)
         # Different from last case because of symmetric 'd'
-        self.assertEqual(tcc.wagner_fischer('abcdefg', 'gfedcba'), 6)
+        self.assertEqual(Strings.wagner_fischer('abcdefg', 'gfedcba'), 6)
         # '0123456789' and '9876543210'
-        self.assertEqual(tcc.wagner_fischer(string.digits, string.digits[::-1]),
-                         len(string.digits))
+        self.assertEqual(
+            Strings.wagner_fischer(string.digits, string.digits[::-1]),
+            len(string.digits))
 
 
 if __name__ == '__main__':
