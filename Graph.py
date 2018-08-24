@@ -47,7 +47,7 @@ class BipartiteMatcher:
         """
         :param left: left set of elements
         :param right: right set of elements
-        :param filter_class: a callable Suffix Tree-like class to build()
+        :param filter_class: a callable Suffix Tree-like class to build
         filters for left and right sets. Upon called with a string, must
         return a list of indexes of candidates to compare to that string.
         """
@@ -59,9 +59,7 @@ class BipartiteMatcher:
             # filter_on_left is used to filter left-side candidates,
             # thus should be queried with a right vertex (and vice-versa)
             self.filter_on_left = filter_class(left)
-            self.filter_on_left.build()
             self.filter_on_right = filter_class(right)
-            self.filter_on_right.build()
 
     def stable_match(self):
         """ Irving weakly-stable marriage algorithm.
