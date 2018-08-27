@@ -1,14 +1,14 @@
+import argparse
 import json
-import os
-import sys
 from time import time
 
+from ortools.graph import pywrapgraph
+
 import Graph
-import SuffixArray as sa
-import tcc
+from SuffixArray import SuffixArray
 
 
-def accuracy(matching, original_mapping):
+def accuracy_marriage(matching, original_mapping):
     errors = []
     equal_amount = 0
     for k, v in matching.items():
@@ -19,71 +19,130 @@ def accuracy(matching, original_mapping):
     return equal_amount / len(matching), errors
 
 
+def accuracy_assignment(assignment, bipartite_matcher, original_mapping):
+    errors = []
+    equal_amount = 0
+    for l in range(assignment.NumNodes()):
+        r = assignment.RightMate(l)
+        is_equal = bipartite_matcher.right[r].label == \
+                   original_mapping[bipartite_matcher.left[l].label]
+        equal_amount += int(is_equal)
+        if not is_equal:
+            errors.append(l)
+    return equal_amount / assignment.NumNodes(), errors
+
+
+def assignment_bench(json_dict):
+    keys = list(json_dict.keys())
+    values = list(json_dict.values())
+
+    matcher = Graph.BipartiteMatcher(keys, values, SuffixArray)
+    time_init = time()
+    matcher.set_prefs(Graph.vertex_diff)
+    time_end_prefs = time()
+    assignment = pywrapgraph.LinearSumAssignment()
+
+    for these in [matcher.left, matcher.right]:
+        for this in these:
+            for rating in this.ratings:
+                assignment.AddArcWithCost(this.idx, rating[0].idx,
+                                          int(rating[1]))
+
+    solve_status = assignment.Solve()
+    time_end = time()
+
+    prefs_time = time_end_prefs - time_init
+    total_time = time_end - time_init
+    acc, errs = 0, []
+    if solve_status == assignment.OPTIMAL:
+        acc, errs = accuracy_assignment(assignment, matcher, json_dict)
+        for i in errs:
+            print('----------------------> %s\n'
+                  '  got mapped to       : %s\n'
+                  '  but should have been: %s\n'
+                  '  Cost = %d' % (
+                      matcher.left[i],
+                      matcher.right[assignment.RightMate(i)],
+                      matcher.right[i],
+                      assignment.AssignmentCost(i)))
+        print(f'{len(errs)} wrong assignments')
+        print('Accuracy:', acc)
+        print('Total cost:', assignment.OptimalCost())
+    elif solve_status == assignment.INFEASIBLE:
+        print('No assignment is possible.')
+    elif solve_status == assignment.POSSIBLE_OVERFLOW:
+        print(
+            'Some input costs are too large and may cause an integer overflow.')
+    print(f'Preferences run time: {prefs_time} seconds'
+          f' ({prefs_time / 60} minutes)')
+    print(f'Total run time: {total_time} seconds'
+          f' ({total_time / 60} minutes)')
+
+    return {
+        'total_time': total_time,
+        'preferences_time': prefs_time,
+        'accuracy': acc,
+        'errors': errs
+    }
+
+
 def benchmark(json_dict):
-    filter_U = sa.SuffixArray(list(json_dict.keys()))
-    filter_U.build()
+    keys = list(json_dict.keys())
+    values = list(json_dict.values())
 
-    filter_V = sa.SuffixArray(list(json_dict.values()))
-    filter_V.build()
-
-    U = [Graph.Vertex(k) for k in json_dict.keys()]
-    V = [Graph.Vertex(v) for v in json_dict.values()]
-
-    G = Graph.BipartiteGraph(U, V)
+    G = Graph.BipartiteMatcher(keys, values)
 
     time_init = time()
-    G.set_prefs(tcc.vertex_diff, (filter_U, filter_V))
+    G.set_prefs(Graph.vertex_diff)
+    time_end_prefs = time()
     matching = G.stable_match()
     time_end = time()
 
-    acc, errs = accuracy(matching, json_dict)
+    prefs_time = time_end_prefs - time_init
+    total_time = time_end - time_init
+    acc, errs = accuracy_marriage(matching, json_dict)
 
-    return matching, time_end - time_init, acc, errs
-
-
-def output(out_file_path, x, y):
-    if os.path.exists(out_file_path):
-        with open(out_file_path, 'a') as outf:
-            print(f'{x}, {y}', file=outf)
-    else:
-        with open(out_file_path, 'w') as outf:
-            print('x, y', file=outf)
-            print(f'{x}, {y}', file=outf)
+    return {
+        'matching': matching,
+        'total_time': total_time,
+        'preferences_time': prefs_time,
+        'accuracy': acc,
+        'errors': errs
+    }
 
 
-def run_for_file(test_case_path):
-    with open(test_case_path, 'r') as test_file:
-        test_json = json.load(test_file)
+def output(output_path, x, y):
+    with open(output_path, 'a') as out_file:
+        print(f'{x}, {y}', file=out_file)
 
-    matching, sec, acc, errs = benchmark(test_json)
 
-    paths = test_case_path.split('/')
-    out_dir = paths[0]
-    test_case = paths[1]
-    size = paths[-1][:-5]
+def main():
+    print('Running benchmark with arguments:', args)
 
-    out_sec_path = f'{out_dir}/{test_case}_sec.csv'
-    out_acc_path = f'{out_dir}/{test_case}_acc.csv'
+    with open(args.json, 'r') as input_json:
+        input_dict = json.load(input_json)
 
-    # print(out_sec_path, size, sec)
-    # print(out_acc_path, size, acc)
+    size = len(input_dict)
+    rslts = assignment_bench(input_dict)
 
-    output(out_sec_path, size, sec)
-    output(out_acc_path, size, acc)
-
-    # print('Errors:')
-    # for v in errs:
-    #     print(f'{v.label}\n'
-    #           '\twas mapped to\n'
-    #           f'{matching[v].label},\n'
-    #           '\tbut should have been to\n'
-    #           f'{test_json[v.label]}\n')
+    paths = args.json.split('/')
+    filename = paths[-1]
+    for label, value in \
+            zip(['sec', 'acc'], [rslts['total_time'], rslts['accuracy']]):
+        output_path = f'{args.outdir}/{filename}_{label}.csv'
+        if args.reset:
+            with open(output_path, 'w') as out_file:
+                print('x, y', file=out_file)
+        output(output_path, size, value)
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print('Missing arguments.'
-              f' Usage:\npython {sys.argv[0]} <.json file>')
-        exit(0)
+    argp = argparse.ArgumentParser()
+    argp.add_argument('json', type=str, help='path to .json input file')
+    argp.add_argument('outdir', type=str,
+                      help='directory to output time and accuracy as files')
+    argp.add_argument('-r', '--reset', action='store_true',
+                      help='reset file before output')
+    args = argp.parse_args()
 
-    run_for_file(sys.argv[1])
+    main()

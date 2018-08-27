@@ -1,7 +1,8 @@
 import io
 import sys
-import Graph
 import unittest as ut
+
+import Graph
 
 
 class StableMatchingTest(ut.TestCase):
@@ -100,7 +101,7 @@ class StableMatchingTest(ut.TestCase):
 
         U = set([u0, u1, u2, u3, u4, u5, u6, u7, u8, u9])
         V = set([v0, v1, v2, v3, v4, v5, v6, v7, v8, v9])
-        self.G = Graph.BipartiteGraph(U, V)
+        self.G = Graph.BipartiteMatcher(U, V)
 
     # Test code taken from:
     # http://www.rosettacode.org/wiki/Stable_marriage_problem#Python

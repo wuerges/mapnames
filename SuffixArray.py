@@ -3,14 +3,13 @@ import operator as op
 
 class SuffixArray:
     def __init__(self, strings):
-        """ Saves the strings for later building.
-
-        Does not build the Suffix Array. Call self.build() for that.
+        """ Saves the strings and builds the Suffix Array.
 
         :param strings: list of strings to build the Suffix Array on
         """
         self.strings = strings
         self.suffixes = None
+        self.build()
 
     def build(self):
         """ Builds the Suffix Array based on saved strings """
