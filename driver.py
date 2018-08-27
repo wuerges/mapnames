@@ -4,6 +4,8 @@ import json
 import gc
 import progressbar
 import GaleShapley as gs
+from math import exp
+from ortools.graph import pywrapgraph
 
 """
 This module is the driver program that can be used to process the testcases.
@@ -23,7 +25,9 @@ if not args:
     parser.print_help()
     exit(0)
 result = []
+result_magic = []
 result_match = []
+result_ortools = []
 
 for arg in args:
     with open(arg) as f:
@@ -42,8 +46,11 @@ for arg in args:
 
         g = gs.G(len(x[0]))
 
+        assignment = pywrapgraph.LinearSumAssignment()
+
         count = 0
         correct = 0
+        magic = 0
         j = 0
 
         print("Matching Terms")
@@ -57,36 +64,45 @@ for arg in args:
             best_term = term
             best_sz = -1
 
+            found_magic = False
+
             for i in range(len(term)-1):
                 p, w, wid, sz, lm = t1.search(term[i:])
-                #score = lm
-                #score = 1/sz
                 score = lm/sz
+                #score = int(100000 * lm /exp(min(sz, 10)))
+                #score = int(100000 * lm /(sz*sz))
+                #score = int(100000 * lm/sz)
+                #score = 1/sz
 
                 if score > best:
-                    g.grade(j, wid, lm/sz)
-                    g.grade(wid, j, lm/sz)
-
-                #if sz < best:
                     best = score
                     best_term = term[i:i+lm]
                     best_sz = sz
                     best_wid = wid
 
+                #if sz < 100:
+                if sz < 1000:
+                    x, i = t1.searchNode(term[i:])
+                    #value = int(100000 * i /exp(sz))
+                    value = int(100000 * i /sz)
+                    l = []
+                    x.dfs(l)
+                    for _, _, xwid in l:
+                        if xwid == j:
+                            found_magic = True
+                        g.grade(j, xwid, value)
+                        g.grade(xwid, j, value)
+                        assignment.AddArcWithCost(j, xwid, value)
+
+            if found_magic:
+                magic += 1
+            # greedy matching
             if j == best_wid:
                 correct += 1
             j += 1
-            #else:
-                #print("-"*10)
-                #print(j, best_wid, best_sz, best_term)
-                #print("original:", term)
-                #print("cut:", best_term)
-                #print(x[0][j])
-                #print(x[1][j])
-                #print(x[0][best_wid])
-                #print(x[1][best_wid])
 
         result.append([count, correct])
+        result_magic.append([count, magic])
         del t1
         gc.collect()
 
@@ -96,6 +112,7 @@ for arg in args:
         res = gs.GaleShapley(g.p, ps)
         #print(res)
 
+        # crappy matching
         c1 = 0
         c2 = 0
         for a, b in res.items():
@@ -103,9 +120,24 @@ for arg in args:
             if a == b:
                 c1 += 1
 
+        # assigment
+        c3 = 0
+        solve_status = assignment.Solve()
+
+        if solve_status == assignment.OPTIMAL:
+            for l in range(assignment.NumNodes()):
+                r = assignment.RightMate(l)
+                if l == r:
+                    c3 += 1
+
         result_match.append([c2, c1])
+        result_ortools.append([c2, c3])
 
         print("Results without matching")
         print(result, sum(a/b for [b,a] in result)/len(result))
         print("Results using crappy matching")
         print(result_match, sum(a/b for [b,a] in result_match)/len(result_match))
+        print("Results using magic")
+        print(result_magic, sum(a/b for [b,a] in result_magic)/len(result_magic))
+        print("Results using ortools")
+        print(result_ortools, sum(a/b for [b,a] in result_ortools)/len(result_ortools))
