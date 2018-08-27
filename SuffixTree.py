@@ -98,6 +98,35 @@ class N:
                 else:
                     i += 1
 
+    def searchNode(self, term):
+        """
+        Performs a search in the tree, returning a node and the length of the match.
+
+        Parameters
+        ----------
+        term : str
+            The term to be searched in the tree.
+
+        Returns
+        -------
+        node, length : tuple
+
+        node : SuffixTree
+            The lowest node in the tree that matches the term.
+        length : int
+            The lenght of the match.
+        """
+        i = 0
+        x = self
+        while i < len(term) and x.real:
+            #print("searching ", term[:i+1])
+            if term[i] in x.child:
+                x = x.child[term[i]]
+                i += 1
+            else:
+                break
+        return x, i
+
     def search(self, term):
         """
         Performs a search in the tree.
@@ -123,15 +152,9 @@ class N:
         length : int
             The lenght of the match.
         """
-        i = 0
-        x = self
-        while i < len(term) and x.real:
-            #print("searching ", term[:i+1])
-            if term[i] in x.child:
-                x = x.child[term[i]]
-                i += 1
-            else:
-                break
+
+        x, i = self.searchNode(term)
+
         if not x.real:
             j = x.p
             #print("xxx", i, term[i:], x.word[x.p:])
