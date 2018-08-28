@@ -7,6 +7,8 @@ name = "pypi"
 ortools = "*"
 progressbar = "*"
 "progressbar2" = "*"
+termcolor = "*"
+numpy = "*"
 
 [dev-packages]
 

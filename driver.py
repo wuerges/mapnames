@@ -1,11 +1,14 @@
 from optparse import OptionParser
 from SuffixTree import CreateTree
+from Simple import *
 import json
 import gc
 import progressbar
 import GaleShapley as gs
+import Strings
 from math import exp
 from ortools.graph import pywrapgraph
+from termcolor import colored
 
 """
 This module is the driver program that can be used to process the testcases.
@@ -35,6 +38,8 @@ for arg in args:
         x = json.load(f)
         if type(x) is dict:
             x = [list(x.keys()), list(x.values())]
+
+        #x = aplica(trocaPorSublinhado, x)
 
         if options.limit:
             x[0] = x[0][:options.limit]
@@ -80,22 +85,45 @@ for arg in args:
                     best_sz = sz
                     best_wid = wid
 
-                #if sz < 100:
-                if sz < 1000:
-                    x, i = t1.searchNode(term[i:])
+
+ #           node, i = t1.searchNode(best_term)
+ #
+ #           if best_sz < 100:
+ #               l = []
+ #               node.dfs(l)
+ #               for _, _, xwid in l:
+ #                   value = int(100000 * best)
+ #                   if xwid == j:
+ #                       found_magic = True
+ #                   g.grade(j, xwid, value)
+ #                   g.grade(xwid, j, value)
+ #                   assignment.AddArcWithCost(j, xwid, value)
+ #           else:
+ #               print(colored("\n\n\nOW SHIT", "red"), best_term)
+
+                if sz < 10:
+                #if sz < 1000:
+                    node, i = t1.searchNode(term[i:])
                     #value = int(100000 * i /exp(sz))
                     value = int(100000 * i /sz)
                     l = []
-                    x.dfs(l)
+                    node.dfs(l)
                     for _, _, xwid in l:
+                        value2 = Strings.wagner_fischer(x[0][j], x[1][j])
                         if xwid == j:
                             found_magic = True
-                        g.grade(j, xwid, value)
-                        g.grade(xwid, j, value)
-                        assignment.AddArcWithCost(j, xwid, value)
+                        g.grade(j, xwid, value2)
+                        g.grade(xwid, j, value2)
+                        assignment.AddArcWithCost(j, xwid, value2)
+#                else:
+#                    print(colored("\n\n\nOW SHIT", "red"), best_term)
 
             if found_magic:
                 magic += 1
+            else:
+                print("\n",colored("Magic Failed", "red"), x[0][j], x[1][j])
+                print(colored("Best Failed","red"), x[0][best_wid], "\n")
+
             # greedy matching
             if j == best_wid:
                 correct += 1
